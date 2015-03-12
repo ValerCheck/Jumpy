@@ -1,0 +1,4 @@
+syntax: glob
+*/obj/*
+Jumpy/App.xaml.cs
+*/bin/*
