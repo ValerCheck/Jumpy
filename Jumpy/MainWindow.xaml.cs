@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Jumpy.Entities;
 using Jumpy.ViewModel;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace Jumpy
 {
@@ -65,7 +69,57 @@ namespace Jumpy
         public MainWindow()
         {
             InitializeComponent();
-            CompositionTarget.Rendering += MainLoop;
+            LoadLevel();
+            RenderLevel();
+            //CompositionTarget.Rendering += MainLoop;
+        }
+
+        public List<Level> Levels;
+        public Level CurrentLevel;
+
+        public void LoadLevel()
+        {
+            CurrentLevel = JsonConvert.DeserializeObject<Level>(File.ReadAllText(@"levelmaps.json"));
+        }
+
+        public void RenderLevel()
+        {
+            var map = CurrentLevel.Map;
+            var elementHeight = SystemParameters.PrimaryScreenHeight / CurrentLevel.Height;
+            var elementWidth = elementHeight;
+            //var elementWidth = 32;
+            //var elementHeight = 32;
+            for (var x = 0; x < CurrentLevel.Width; x++)
+            {
+                for (var y = 0; y < CurrentLevel.Height; y++)
+                {
+                    if (map[y, x] == Helper.EntityTypes[EntityType.Brick])
+                    {
+                        var brick = new Border()
+                        {
+                            Width = elementWidth,
+                            Height = elementHeight,
+                            Background = Brushes.Brown,
+                            BorderBrush = Brushes.Brown,
+                            Padding = new Thickness(0),
+                            Margin = new Thickness(0)
+                            //Margin = new Thickness(elementWidth*x, elementHeight*y, 0, 0)
+                        };
+                        RootCanvas.Children.Add(brick);
+                        Canvas.SetLeft(brick,elementWidth*x);
+                        Canvas.SetTop(brick,elementHeight*y);
+                    }
+                }
+            }
+            var playerView = new Ellipse()
+            {
+                Width = elementWidth,
+                Height = elementHeight,
+                Fill = Brushes.Green,
+                Margin = new Thickness(elementWidth*CurrentLevel.PlayerPosition[0], 
+                    elementHeight*CurrentLevel.PlayerPosition[1], 0, 0)
+            };
+            RootCanvas.Children.Add(playerView);
         }
 
         private IEnumerable<FrameworkElement> findNearest()

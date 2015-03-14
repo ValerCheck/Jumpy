@@ -1,1 +1,4 @@
-.hg/*
+Jumpy/obj/* 
+Jumpy/bin/* 
+.hg/* 
+.hgignore 
