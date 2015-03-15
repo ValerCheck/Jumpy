@@ -106,8 +106,9 @@ namespace Jumpy
                             //Margin = new Thickness(elementWidth*x, elementHeight*y, 0, 0)
                         };
                         RootCanvas.Children.Add(brick);
-                        Canvas.SetLeft(brick,elementWidth*x);
+                        Canvas.SetLeft(brick,(elementWidth-0.5)*x);
                         Canvas.SetTop(brick,elementHeight*y);
+                        
                     }
                 }
             }

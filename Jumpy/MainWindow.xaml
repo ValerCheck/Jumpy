@@ -19,18 +19,18 @@
         <KeyBinding Key="Up" Command="{Binding MoveUp}"></KeyBinding>
         <KeyBinding Key="Down" Command="{Binding MoveDown}"></KeyBinding>
     </Window.InputBindings>-->
-    <Canvas>
-        <!--<Ellipse Canvas.Bottom="{Binding Y}" Canvas.Left="{Binding X}" Width="70" Height="70" 
+    <Grid>
+        <Canvas>
+            <!--<Ellipse Canvas.Bottom="{Binding Y}" Canvas.Left="{Binding X}" Width="70" Height="70" 
                  Fill="Chartreuse" Stroke="CornflowerBlue" StrokeThickness="5">
-            
-        </Ellipse>-->
-        
-        <!--<gameObjects:PlayerBall Canvas.Bottom="{Binding Y}" Canvas.Left="{Binding X}"></gameObjects:PlayerBall>-->
-        <!--<Border Canvas.Bottom="0" Background="Aqua">
-            <Image  Width="600" Height="40"></Image>
-        </Border>-->
-        <!--<Rectangle Canvas.Bottom="0" Canvas.Left="0" Width="300" Height="40" Fill="Aqua"></Rectangle>
-        <Rectangle Canvas.Bottom="120" Canvas.Left="350" Width="300" Height="40" Fill="Aqua"></Rectangle>-->
-        
-    </Canvas>
+                </Ellipse>-->
+           <!--<gameObjects:PlayerBall Canvas.Bottom="{Binding Y}" Canvas.Left="{Binding X}"></gameObjects:PlayerBall>-->
+                <!--<Border Canvas.Bottom="0" Background="Aqua">
+                <Image  Width="600" Height="40"></Image>
+                </Border>-->
+            <!--<Rectangle Canvas.Bottom="0" Canvas.Left="0" Width="300" Height="40" Fill="Aqua"></Rectangle>
+                <Rectangle Canvas.Bottom="120" Canvas.Left="350" Width="300" Height="40" Fill="Aqua"></Rectangle>-->
+        </Canvas>
+    </Grid>
+    
 </Window>
