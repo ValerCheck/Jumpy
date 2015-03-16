@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,10 +10,11 @@ using Jumpy.Entities;
 using Jumpy.ViewModel;
 using System.IO;
 using Newtonsoft.Json;
+using System.Windows.Data;
 
 namespace Jumpy
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
 
         #region Keys
@@ -25,6 +25,13 @@ namespace Jumpy
         private bool rightKeyPressed;
         
         #endregion
+
+        public enum EntityType
+        {
+            Space = 0,
+            Brick = 1,
+            RaisingPlatform
+        }
 
         private double VerticalSpeed = 2;
         private double MoveSpeed = 0;
@@ -37,7 +44,7 @@ namespace Jumpy
 
         public Canvas RootCanvas
         {
-            get { return root ?? (root = Content as Canvas); }
+            get { return root ?? (root = (Content as Grid).Children.OfType<Canvas>().First()); }
         }
 
         public Image Player
@@ -69,8 +76,8 @@ namespace Jumpy
         public MainWindow()
         {
             InitializeComponent();
-            LoadLevel();
-            RenderLevel();
+            //DispatcherTimer gameLoop = new DispatcherTimer();
+            //gameLoop
             //CompositionTarget.Rendering += MainLoop;
         }
 
@@ -84,16 +91,18 @@ namespace Jumpy
 
         public void RenderLevel()
         {
+            var viewModel = DataContext as GameViewModel;
             var map = CurrentLevel.Map;
-            var elementHeight = SystemParameters.PrimaryScreenHeight / CurrentLevel.Height;
+            var elementHeight = RootCanvas.ActualHeight / CurrentLevel.Height;
             var elementWidth = elementHeight;
-            //var elementWidth = 32;
-            //var elementHeight = 32;
+            viewModel.ViewWidth = elementWidth;
+            viewModel.ViewHeight = elementHeight;
+            var leftMargin = (RootCanvas.ActualWidth - elementWidth*CurrentLevel.Width)/2;
             for (var x = 0; x < CurrentLevel.Width; x++)
             {
                 for (var y = 0; y < CurrentLevel.Height; y++)
                 {
-                    if (map[y, x] == Helper.EntityTypes[EntityType.Brick])
+                    if (map[y, x] == (int)EntityType.Brick)
                     {
                         var brick = new Border()
                         {
@@ -101,14 +110,11 @@ namespace Jumpy
                             Height = elementHeight,
                             Background = Brushes.Brown,
                             BorderBrush = Brushes.Brown,
-                            Padding = new Thickness(0),
-                            Margin = new Thickness(0)
-                            //Margin = new Thickness(elementWidth*x, elementHeight*y, 0, 0)
                         };
                         RootCanvas.Children.Add(brick);
-                        Canvas.SetLeft(brick,(elementWidth-0.5)*x);
+                        Canvas.SetLeft(brick,(elementWidth)*x + leftMargin);
                         Canvas.SetTop(brick,elementHeight*y);
-                        
+                        viewModel.Actors.Add(new Brick(new []{x,y}));
                     }
                 }
             }
@@ -117,10 +123,15 @@ namespace Jumpy
                 Width = elementWidth,
                 Height = elementHeight,
                 Fill = Brushes.Green,
-                Margin = new Thickness(elementWidth*CurrentLevel.PlayerPosition[0], 
-                    elementHeight*CurrentLevel.PlayerPosition[1], 0, 0)
             };
             RootCanvas.Children.Add(playerView);
+            //Canvas.SetLeft(playerView,elementWidth * CurrentLevel.PlayerPosition[0]);
+            Canvas.SetTop(playerView, elementHeight * CurrentLevel.PlayerPosition[1]);
+            viewModel.Player = new Player(new []{CurrentLevel.PlayerPosition[0],CurrentLevel.PlayerPosition[1]});
+            X = elementWidth*CurrentLevel.PlayerPosition[0] + 300;
+            Binding phX = new Binding("PhysicalX");
+            phX.Source = viewModel;
+            playerView.SetBinding(Canvas.LeftProperty, phX);
         }
 
         private IEnumerable<FrameworkElement> findNearest()
@@ -159,7 +170,7 @@ namespace Jumpy
 
         private void MainLoop(object sender, EventArgs arts)
         {
-            if (checkCollision())
+            /*if (checkCollision())
             {
                 if (VerticalSpeed > -MaxDownSpeed)
                     VerticalSpeed -= 0.5;
@@ -183,7 +194,7 @@ namespace Jumpy
             else
             {
                 MoveSpeed = -MoveSpeed;
-            }
+            }*/
             if (leftKeyPressed)
             {
                 if (X > 0 && MoveSpeed > -4)
@@ -211,14 +222,14 @@ namespace Jumpy
 
         private double X
         {
-            get { return (DataContext as PlayerBallViewModel).X; }
-            set { (DataContext as PlayerBallViewModel).X = value; }
+            get { return (DataContext as GameViewModel).PhysicalX; }
+            set { (DataContext as GameViewModel).PhysicalX = value; }
         }
 
         private double Y
         {
-            get { return (DataContext as PlayerBallViewModel).Y; }
-            set { (DataContext as PlayerBallViewModel).Y = value; }
+            get { return (DataContext as GameViewModel).PhysicalY; }
+            set { (DataContext as GameViewModel).PhysicalY = value; }
         }
 
         private void MoveObject()
@@ -241,6 +252,13 @@ namespace Jumpy
             if (e.Key == Key.Down) downKeyPressed = false;
             if (e.Key == Key.Left) leftKeyPressed = false;
             if (e.Key == Key.Right) rightKeyPressed = false;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            LoadLevel();
+            RenderLevel();
+            CompositionTarget.Rendering += MainLoop;
         }
     }
 }

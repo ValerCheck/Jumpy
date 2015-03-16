@@ -1,48 +1,76 @@
-﻿using System.Security.RightsManagement;
-using System.Threading;
-using System.Windows.Input;
+﻿using System.Windows.Input;
+using Jumpy.Entities;
 using ViewModel;
+using System.Collections.Generic;
+using System;
 
 namespace Jumpy.ViewModel
 {
-    public class PlayerBallViewModel:ViewModelBase
+    public class GameViewModel : ViewModelBase
     {
+        private List<IActor> _actors = new List<IActor>();
+        private Player _player;
         private double _x = 0;
         private double _y = 400;
-        private bool isJumping = false;
+        private bool isJumping;
         private double _gravity = 2;
         private double _velocity = 20;
 
-        public double X
+        public double ViewWidth { get; set; }
+        public double ViewHeight { get; set; }
+
+        public List<IActor> Actors
+        {
+            get { return _actors; }
+            set
+            {
+                _actors = value;
+                RaisePropertyChanged("Actors");
+            }
+        }
+
+        public Player Player
+        {
+            get { return _player; }
+            set
+            {
+                _player = value;
+                RaisePropertyChanged("Player");
+            }
+        }
+
+        public double PhysicalX
         {
             get { return _x; }
             set
             {
                 _x = value;
-                RaisePropertyChanged("X");
+                Player.X = Convert.ToInt16(Math.Round(_x/ViewWidth));
+                RaisePropertyChanged("PhysicalX");
             }
         }
 
-        public double Y
+        public double PhysicalY
         {
             get { return _y; }
             set
             {
                 _y = value;
-                RaisePropertyChanged("Y");
+                Player.Y = Convert.ToInt16(Math.Round(_y/ViewHeight));
+                RaisePropertyChanged("PhysicalY");
             }
         }
 
         private void MoveLeftAction()
         {
-            if (X > 0)
-                X -= _velocity;
+            if (Player.X > 0)
+                PhysicalX -= _velocity;
         }
 
         private void MoveRightAction()
         {
-            if (X < 1000)
-                X += _velocity;
+            if (PhysicalX < 1000)
+                PhysicalX += _velocity;
         }
 
         private void JumpAction()
@@ -50,16 +78,14 @@ namespace Jumpy.ViewModel
             isJumping = true;
             while (isJumping)
             {
-                for(var i=0;i<100;i++)
-                    continue;
                 if (_y + _velocity > 0)
                 {
-                    Y += _velocity;
+                    PhysicalY += _velocity;
                     _velocity -= _gravity;
                 }
                 else
                 {
-                    Y = 0;
+                    PhysicalY = 0;
                     isJumping = false;
                 }
             }
@@ -69,8 +95,8 @@ namespace Jumpy.ViewModel
 
         private void MoveDownAction()
         {
-            if (Y > 0)
-                Y -= _velocity;
+            if (PhysicalY > 0)
+                PhysicalY -= _velocity;
         }
 
         public ICommand MoveLeft

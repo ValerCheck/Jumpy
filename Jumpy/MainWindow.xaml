@@ -6,12 +6,12 @@
         WindowStyle="ToolWindow" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
-        Background="Black" 
         Width="640"
+        Loaded="OnLoaded"
         KeyDown="MainWindow_OnKeyDown"
         KeyUp="MainWindow_OnKeyUp">
     <Window.DataContext>
-        <viewModel:PlayerBallViewModel/>
+        <viewModel:GameViewModel/>
     </Window.DataContext>
     <!--<Window.InputBindings>
         <KeyBinding Key="Left" Command="{Binding MoveLeft}" ></KeyBinding>
@@ -19,8 +19,9 @@
         <KeyBinding Key="Up" Command="{Binding MoveUp}"></KeyBinding>
         <KeyBinding Key="Down" Command="{Binding MoveDown}"></KeyBinding>
     </Window.InputBindings>-->
-    <Grid>
-        <Canvas>
+    <Grid Background="DarkBlue">
+        <Canvas Margin="50" Background="Black">
+            <TextBlock Width="100" Background="White" Text="{Binding PhysicalX}"></TextBlock>
             <!--<Ellipse Canvas.Bottom="{Binding Y}" Canvas.Left="{Binding X}" Width="70" Height="70" 
                  Fill="Chartreuse" Stroke="CornflowerBlue" StrokeThickness="5">
                 </Ellipse>-->

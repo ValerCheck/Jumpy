@@ -61,12 +61,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Entities\Actor.cs" />
     <Compile Include="Entities\Brick.cs" />
-    <Compile Include="Entities\Helpers.cs" />
+    <Compile Include="Entities\IActor.cs" />
     <Compile Include="Entities\Level.cs" />
     <Compile Include="Entities\Player.cs" />
-    <Compile Include="ViewModel\PlayerBallViewModel.cs" />
+    <Compile Include="ViewModel\GameViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
