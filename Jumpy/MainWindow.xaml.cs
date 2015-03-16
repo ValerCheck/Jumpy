@@ -11,6 +11,7 @@ using Jumpy.ViewModel;
 using System.IO;
 using Newtonsoft.Json;
 using System.Windows.Data;
+using System.Windows.Threading;
 
 namespace Jumpy
 {
@@ -26,12 +27,23 @@ namespace Jumpy
         
         #endregion
 
-        public enum EntityType
+        private enum Directions
+        {
+            Up = 8,
+            Down = 2,
+            Left = 4,
+            Right = 6,
+            Default = 0
+        }
+
+        private enum EntityType
         {
             Space = 0,
             Brick = 1,
             RaisingPlatform
         }
+
+        private int Direction = 0;
 
         private double VerticalSpeed = 2;
         private double MoveSpeed = 0;
@@ -68,7 +80,6 @@ namespace Jumpy
             {
                 var rect2 = CreateElementRect(near);
                 rect1.Intersect(rect2);
-                //break;
             }
             return rect1.IsEmpty;
         }
@@ -76,17 +87,20 @@ namespace Jumpy
         public MainWindow()
         {
             InitializeComponent();
-            //DispatcherTimer gameLoop = new DispatcherTimer();
-            //gameLoop
-            //CompositionTarget.Rendering += MainLoop;
         }
 
-        public List<Level> Levels;
-        public Level CurrentLevel;
+        private List<Key> _pressedKeys = new List<Key>();
+        private List<Level> Levels;
+        private Level CurrentLevel;
 
         public void LoadLevel()
         {
             CurrentLevel = JsonConvert.DeserializeObject<Level>(File.ReadAllText(@"levelmaps.json"));
+        }
+
+        private void GameLoop(object sender, EventArgs e)
+        {
+            MainLoop();
         }
 
         public void RenderLevel()
@@ -168,7 +182,12 @@ namespace Jumpy
             return rect;
         }
 
-        private void MainLoop(object sender, EventArgs arts)
+        private void MainLoop()
+        {
+            MovePlayer();
+        }
+
+        private void MovePlayer()
         {
             /*if (checkCollision())
             {
@@ -195,29 +214,35 @@ namespace Jumpy
             {
                 MoveSpeed = -MoveSpeed;
             }*/
-            if (leftKeyPressed)
+
+            switch (Direction)
             {
-                if (X > 0 && MoveSpeed > -4)
-                {
-                    MoveSpeed -= 0.5;
-                }
-                
+                case (int)Directions.Left:
+                    if (X > 0 && MoveSpeed >= 0)
+                    {
+                        MoveSpeed = -4;
+                    }
+                    break;
+                case (int)Directions.Right:
+                    if (X < Width && MoveSpeed <= 0)
+                    {
+                        MoveSpeed = 4;
+                    }
+                    break;
+                case (int)Directions.Up:
+                    if (!IsJumping)
+                    {
+                        IsJumping = true;
+                        VerticalSpeed = 10;
+                    }
+                    break;
+                case (int)Directions.Default:
+                    MoveSpeed = 0;
+                    break;
             }
-            else if (rightKeyPressed)
-            {
-                if(X < Width - 70 && MoveSpeed < 4)
-                    MoveSpeed += 0.5;
-            }
-            if (upKeyPressed)
-            {
-                if (!IsJumping)
-                {
-                    IsJumping = true;
-                    VerticalSpeed = 10;
-                }
-            }
-            MoveObject();
-            
+
+            X += MoveSpeed;
+            Y += VerticalSpeed;
         }
 
         private double X
@@ -232,33 +257,77 @@ namespace Jumpy
             set { (DataContext as GameViewModel).PhysicalY = value; }
         }
 
-        private void MoveObject()
-        {
-            X += MoveSpeed;
-            Y += VerticalSpeed;
-        }
-
         private void MainWindow_OnKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Up) upKeyPressed = true;
-            if (e.Key == Key.Down) downKeyPressed = true;
-            if (e.Key == Key.Left) leftKeyPressed = true;
-            if (e.Key == Key.Right) rightKeyPressed = true;
+            if (Keyboard.IsKeyDown(Key.Left))
+            {
+                if (Keyboard.IsKeyDown(Key.Right))
+                {
+                    Direction = (int) Directions.Default;
+                }
+                else
+                {
+                    Direction = (int)Directions.Left;
+                }
+            }
+            if (Keyboard.IsKeyDown(Key.Right))
+            {
+                if (Keyboard.IsKeyDown(Key.Left))
+                {
+                    Direction = (int)Directions.Default;
+                }
+                else
+                {
+                    Direction = (int)Directions.Right;
+                }
+            }
+            if (e.Key == Key.Up)
+                Direction = (int)Directions.Up;
+            if (e.Key == Key.Down)
+                Direction = (int)Directions.Down;
+
+            if (_pressedKeys.Contains(e.Key))
+                return;
+            _pressedKeys.Add(e.Key);
+            e.Handled = true;
+
+            
+            
         }
 
         private void MainWindow_OnKeyUp(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Up) upKeyPressed = false;
-            if (e.Key == Key.Down) downKeyPressed = false;
-            if (e.Key == Key.Left) leftKeyPressed = false;
-            if (e.Key == Key.Right) rightKeyPressed = false;
+            _pressedKeys.Remove(e.Key);
+            e.Handled = true;
+            if (_pressedKeys.Count == 0)
+                Direction = (int)Directions.Default;
+            if (Keyboard.IsKeyDown(Key.Left))
+                Direction = (int) Directions.Left;
+            if (Keyboard.IsKeyDown(Key.Right))
+                Direction = (int) Directions.Right;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             LoadLevel();
             RenderLevel();
-            CompositionTarget.Rendering += MainLoop;
+
+            CompositionTarget.Rendering += GameLoop;
+        }
+
+        private void MainWindow_OnPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            //if (e.Key == Key.Up && e.Key == Key.Down)
+            //    Direction = (int) Directions.Default;
+            //if (e.Key == Key.Up)
+            //    Direction = (int)Directions.Up;
+            //if (e.Key == Key.Right)
+            //    Direction = (int)Directions.Right;
+            //if (e.Key == Key.Down)
+            //    Direction = (int)Directions.Down;
+            //if (e.Key == Key.Left)
+            //    Direction = (int)Directions.Left;
+            
         }
     }
 }

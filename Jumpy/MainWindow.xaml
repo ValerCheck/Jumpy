@@ -8,6 +8,7 @@
         WindowState="Maximized"
         Width="640"
         Loaded="OnLoaded"
+        PreviewKeyDown="MainWindow_OnPreviewKeyDown"
         KeyDown="MainWindow_OnKeyDown"
         KeyUp="MainWindow_OnKeyUp">
     <Window.DataContext>
