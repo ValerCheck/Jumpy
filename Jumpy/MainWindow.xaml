@@ -8,7 +8,6 @@
         WindowState="Maximized"
         Width="640"
         Loaded="OnLoaded"
-        PreviewKeyDown="MainWindow_OnPreviewKeyDown"
         KeyDown="MainWindow_OnKeyDown"
         KeyUp="MainWindow_OnKeyUp">
     <Window.DataContext>
@@ -22,7 +21,8 @@
     </Window.InputBindings>-->
     <Grid Background="DarkBlue">
         <Canvas Margin="50" Background="Black">
-            <TextBlock Width="100" Background="White" Text="{Binding PhysicalX}"></TextBlock>
+            <TextBlock Width="50" Background="White" Text="{Binding LogicX}"></TextBlock>
+            <TextBlock Margin="60 0 0 0" Width="50" Background="White" Text="{Binding LogicY}"></TextBlock>
             <!--<Ellipse Canvas.Bottom="{Binding Y}" Canvas.Left="{Binding X}" Width="70" Height="70" 
                  Fill="Chartreuse" Stroke="CornflowerBlue" StrokeThickness="5">
                 </Ellipse>-->

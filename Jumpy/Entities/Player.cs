@@ -3,6 +3,7 @@
     public class Player : IActor
     {
         public int[] LogicPosition { get; set; }
+
         public int X { get; set; }
         public int Y { get; set; }
 
@@ -12,6 +13,5 @@
             X = logicPosition[0];
             Y = logicPosition[1];
         }
-        
     }
 }

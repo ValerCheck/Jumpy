@@ -11,19 +11,17 @@ using Jumpy.ViewModel;
 using System.IO;
 using Newtonsoft.Json;
 using System.Windows.Data;
-using System.Windows.Threading;
 
 namespace Jumpy
 {
     public partial class MainWindow
     {
 
-        #region Keys
+        #region Constants
 
-        private bool upKeyPressed;
-        private bool downKeyPressed;
-        private bool leftKeyPressed;
-        private bool rightKeyPressed;
+        private const double VelocityHorizontal = 5;
+        private const double VelocityJump = 15;
+        private const double GravityAcceleration = 0.5;
         
         #endregion
 
@@ -43,38 +41,39 @@ namespace Jumpy
             RaisingPlatform
         }
 
-        private int Direction = 0;
+        private int _direction;
 
-        private double VerticalSpeed = 2;
-        private double MoveSpeed = 0;
-        private const double MaxDownSpeed = 6;
-        private const double MaxMoveSpeed = 4;
-        private bool IsJumping;
+        private double _verticalSpeed;
+        private double _horizontalSpeed;
+        
+        
+        private bool _isJumping;
         private bool IsMoving;
-        private Canvas root;
-        private Image player;
+        
+        private Canvas _root;
+        private Image _player;
 
         public Canvas RootCanvas
         {
-            get { return root ?? (root = (Content as Grid).Children.OfType<Canvas>().First()); }
+            get { return _root ?? (_root = ((Grid) Content).Children.OfType<Canvas>().First()); }
         }
 
         public Image Player
         {
             get
             {
-                return player ?? (player = (from c in RootCanvas.Children.Cast<Object>()
+                return _player ?? (_player = (from c in RootCanvas.Children.Cast<Object>()
                     where c.GetType() == typeof (Image)
                     select c).Cast<Image>().Select(r => r)
                     .FirstOrDefault(c => (string) c.Tag == "player"));
             }
         }
 
-        private bool checkCollision()
+        private bool CheckCollision()
         {
             var rect1 = CreateElementRect(Player);
             var nearest = findNearest();
-            if (nearest.Count() == 0)
+            if (!nearest.Any())
                 return true;
             foreach (var near in nearest)
             {
@@ -103,49 +102,54 @@ namespace Jumpy
             MainLoop();
         }
 
+        private void AddElementToCanvas(FrameworkElement element, double left, double top)
+        {
+            RootCanvas.Children.Add(element);
+            Canvas.SetLeft(element, left);
+            Canvas.SetTop(element, top);
+        }
+
         public void RenderLevel()
         {
             var viewModel = DataContext as GameViewModel;
-            var map = CurrentLevel.Map;
-            var elementHeight = RootCanvas.ActualHeight / CurrentLevel.Height;
-            var elementWidth = elementHeight;
-            viewModel.ViewWidth = elementWidth;
-            viewModel.ViewHeight = elementHeight;
-            var leftMargin = (RootCanvas.ActualWidth - elementWidth*CurrentLevel.Width)/2;
+            var elementSize = RootCanvas.ActualHeight / CurrentLevel.Height;
+            viewModel.ViewWidth = elementSize;
+            viewModel.ViewHeight = elementSize;
+            var leftMargin = (RootCanvas.ActualWidth - elementSize*CurrentLevel.Width)/2;
+            viewModel.PhysicalZeroPointX = leftMargin;
+            viewModel.PhysicalZeroPointY = 0;
             for (var x = 0; x < CurrentLevel.Width; x++)
             {
                 for (var y = 0; y < CurrentLevel.Height; y++)
                 {
-                    if (map[y, x] == (int)EntityType.Brick)
+                    if (CurrentLevel.Map[y, x] == (int)EntityType.Brick)
                     {
-                        var brick = new Border()
+                        var brick = new Border
                         {
-                            Width = elementWidth,
-                            Height = elementHeight,
+                            Width = elementSize,
+                            Height = elementSize,
                             Background = Brushes.Brown,
                             BorderBrush = Brushes.Brown,
                         };
-                        RootCanvas.Children.Add(brick);
-                        Canvas.SetLeft(brick,(elementWidth)*x + leftMargin);
-                        Canvas.SetTop(brick,elementHeight*y);
+                        AddElementToCanvas(brick, (elementSize) * x + leftMargin, elementSize * y);
                         viewModel.Actors.Add(new Brick(new []{x,y}));
                     }
                 }
             }
             var playerView = new Ellipse()
             {
-                Width = elementWidth,
-                Height = elementHeight,
+                Width = elementSize,
+                Height = elementSize,
                 Fill = Brushes.Green,
             };
             RootCanvas.Children.Add(playerView);
-            //Canvas.SetLeft(playerView,elementWidth * CurrentLevel.PlayerPosition[0]);
-            Canvas.SetTop(playerView, elementHeight * CurrentLevel.PlayerPosition[1]);
             viewModel.Player = new Player(new []{CurrentLevel.PlayerPosition[0],CurrentLevel.PlayerPosition[1]});
-            X = elementWidth*CurrentLevel.PlayerPosition[0] + 300;
-            Binding phX = new Binding("PhysicalX");
-            phX.Source = viewModel;
+            X = elementSize*CurrentLevel.PlayerPosition[0] + leftMargin;
+            Y = elementSize*CurrentLevel.PlayerPosition[1];
+            Binding phX = new Binding("PhysicalX") { Source = viewModel };
+            Binding phY = new Binding("PhysicalY") { Source = viewModel };
             playerView.SetBinding(Canvas.LeftProperty, phX);
+            playerView.SetBinding(Canvas.TopProperty, phY);
         }
 
         private IEnumerable<FrameworkElement> findNearest()
@@ -155,7 +159,6 @@ namespace Jumpy
                 select child).Cast<FrameworkElement>();
             var nearest = new List<FrameworkElement>();
             var playerRect = CreateElementRect(Player);
-            //playerRect.Scale(2,2);
             foreach (var wall in allObstacles)
             {
                 var wallRect = CreateElementRect(wall);
@@ -167,7 +170,7 @@ namespace Jumpy
 
         private bool IsCollided()
         {
-            return (X <= 0) || (X >= Width) || (checkCollision() && !IsJumping);
+            return (X <= 0) || (X >= Width) || (CheckCollision() && !_isJumping);
         }
 
         private static Rect CreateElementRect(FrameworkElement element)
@@ -187,75 +190,62 @@ namespace Jumpy
             MovePlayer();
         }
 
+        private bool CanJump()
+        {
+            var viewModel = (GameViewModel) DataContext;
+            if (_isJumping && _verticalSpeed.Equals(0))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private void Jump()
+        {
+            _verticalSpeed = -VelocityJump;
+            _isJumping = true;
+        }
+
+        private void Fall()
+        {
+            _verticalSpeed += GravityAcceleration;
+        }
+
         private void MovePlayer()
         {
-            /*if (checkCollision())
+            if (_direction == (int) Directions.Left)
             {
-                if (VerticalSpeed > -MaxDownSpeed)
-                    VerticalSpeed -= 0.5;
+                if (X > 0)
+                    _horizontalSpeed = -VelocityHorizontal;
             }
-            else
+            if (_direction == (int) Directions.Right)
             {
-                VerticalSpeed = 0;
-                IsJumping = false;
+                if (X < RootCanvas.ActualWidth)
+                    _horizontalSpeed = VelocityHorizontal;
             }
-            if (!IsCollided())
+            if (_direction == (int) Directions.Up)
             {
-                if (MoveSpeed > 0)
+                if (CanJump())
+                    Jump();
+            }
+            if (_direction == (int) Directions.Default)
+            {
+                if (!_isJumping)
                 {
-                    MoveSpeed -= 0.05;
-                    if (MoveSpeed < 0.05)
-                        MoveSpeed = 0;
+                    _horizontalSpeed = 0;
+                    _verticalSpeed = 0;
                 }
-                if (MoveSpeed < 0)
-                    MoveSpeed += 0.05;
-            }
-            else
-            {
-                MoveSpeed = -MoveSpeed;
-            }*/
-
-            switch (Direction)
-            {
-                case (int)Directions.Left:
-                    if (X > 0 && MoveSpeed >= 0)
-                    {
-                        MoveSpeed = -4;
-                    }
-                    break;
-                case (int)Directions.Right:
-                    if (X < Width && MoveSpeed <= 0)
-                    {
-                        MoveSpeed = 4;
-                    }
-                    break;
-                case (int)Directions.Up:
-                    if (!IsJumping)
-                    {
-                        IsJumping = true;
-                        VerticalSpeed = 10;
-                    }
-                    break;
-                case (int)Directions.Default:
-                    MoveSpeed = 0;
-                    break;
+                
             }
 
-            X += MoveSpeed;
-            Y += VerticalSpeed;
+            if (_isJumping)
+                Fall();
+
+            X += _horizontalSpeed;
+            Y += _verticalSpeed;
         }
 
-        private double X
-        {
-            get { return (DataContext as GameViewModel).PhysicalX; }
-            set { (DataContext as GameViewModel).PhysicalX = value; }
-        }
 
-        private double Y
-        {
-            get { return (DataContext as GameViewModel).PhysicalY; }
-            set { (DataContext as GameViewModel).PhysicalY = value; }
-        }
 
         private void MainWindow_OnKeyDown(object sender, KeyEventArgs e)
         {
@@ -263,36 +253,41 @@ namespace Jumpy
             {
                 if (Keyboard.IsKeyDown(Key.Right))
                 {
-                    Direction = (int) Directions.Default;
+                    _direction = (int) Directions.Default;
                 }
                 else
                 {
-                    Direction = (int)Directions.Left;
+                    _direction = (int)Directions.Left;
                 }
             }
             if (Keyboard.IsKeyDown(Key.Right))
             {
                 if (Keyboard.IsKeyDown(Key.Left))
                 {
-                    Direction = (int)Directions.Default;
+                    _direction = (int)Directions.Default;
                 }
                 else
                 {
-                    Direction = (int)Directions.Right;
+                    _direction = (int)Directions.Right;
                 }
             }
             if (e.Key == Key.Up)
-                Direction = (int)Directions.Up;
+            {
+                if (!_isJumping)
+                {
+                    _direction = (int) Directions.Up;
+                    _isJumping = true;    
+                }
+                                
+            }
             if (e.Key == Key.Down)
-                Direction = (int)Directions.Down;
+                _direction = (int)Directions.Down;
 
             if (_pressedKeys.Contains(e.Key))
                 return;
             _pressedKeys.Add(e.Key);
             e.Handled = true;
-
-            
-            
+   
         }
 
         private void MainWindow_OnKeyUp(object sender, KeyEventArgs e)
@@ -300,34 +295,33 @@ namespace Jumpy
             _pressedKeys.Remove(e.Key);
             e.Handled = true;
             if (_pressedKeys.Count == 0)
-                Direction = (int)Directions.Default;
-            if (Keyboard.IsKeyDown(Key.Left))
-                Direction = (int) Directions.Left;
-            if (Keyboard.IsKeyDown(Key.Right))
-                Direction = (int) Directions.Right;
+                _direction = (int) Directions.Default;
+            else
+            {
+                if (Keyboard.IsKeyDown(Key.Left))
+                    _direction = (int)Directions.Left;
+                else if (Keyboard.IsKeyDown(Key.Right))
+                    _direction = (int)Directions.Right;    
+            }
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             LoadLevel();
             RenderLevel();
-
             CompositionTarget.Rendering += GameLoop;
         }
 
-        private void MainWindow_OnPreviewKeyDown(object sender, KeyEventArgs e)
+        private double X
         {
-            //if (e.Key == Key.Up && e.Key == Key.Down)
-            //    Direction = (int) Directions.Default;
-            //if (e.Key == Key.Up)
-            //    Direction = (int)Directions.Up;
-            //if (e.Key == Key.Right)
-            //    Direction = (int)Directions.Right;
-            //if (e.Key == Key.Down)
-            //    Direction = (int)Directions.Down;
-            //if (e.Key == Key.Left)
-            //    Direction = (int)Directions.Left;
-            
+            get { return ((GameViewModel)DataContext).PhysicalX; }
+            set { ((GameViewModel)DataContext).PhysicalX = value; }
+        }
+
+        private double Y
+        {
+            get { return ((GameViewModel)DataContext).PhysicalY; }
+            set { ((GameViewModel)DataContext).PhysicalY = value; }
         }
     }
 }

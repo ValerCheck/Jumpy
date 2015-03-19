@@ -1,5 +1,9 @@
-Jumpy/bin/
-Jumpy/obj/
+[Bb]in/
+[Oo]bj/
+[Bb]in/*
+[Oo]bj/*
 packages/
 .hg/* 
 .hgignore 
+*.suo
+

@@ -10,14 +10,16 @@ namespace Jumpy.ViewModel
     {
         private List<IActor> _actors = new List<IActor>();
         private Player _player;
-        private double _x = 0;
-        private double _y = 400;
+        private double _x;
+        private double _y;
         private bool isJumping;
         private double _gravity = 2;
         private double _velocity = 20;
 
         public double ViewWidth { get; set; }
         public double ViewHeight { get; set; }
+        public double PhysicalZeroPointX { get; set; }
+        public double PhysicalZeroPointY { get; set; }
 
         public List<IActor> Actors
         {
@@ -45,7 +47,7 @@ namespace Jumpy.ViewModel
             set
             {
                 _x = value;
-                Player.X = Convert.ToInt16(Math.Round(_x/ViewWidth));
+                LogicX = Convert.ToInt16(Math.Round( (PhysicalX - PhysicalZeroPointX) /ViewWidth));
                 RaisePropertyChanged("PhysicalX");
             }
         }
@@ -56,8 +58,31 @@ namespace Jumpy.ViewModel
             set
             {
                 _y = value;
-                Player.Y = Convert.ToInt16(Math.Round(_y/ViewHeight));
+                LogicY = Convert.ToInt16(Math.Round( (PhysicalY - PhysicalZeroPointY) /ViewHeight));
                 RaisePropertyChanged("PhysicalY");
+            }
+        }
+
+        public int LogicX
+        {
+            get
+            {
+                return Player == null ? 0 : Player.X;
+            }
+            set
+            {
+                Player.X = value;
+                RaisePropertyChanged("LogicX");
+            }
+        }
+
+        public int LogicY
+        {
+            get { return Player == null ? 0 : Player.Y; }
+            set
+            {
+                Player.Y = value;
+                RaisePropertyChanged("LogicY");
             }
         }
 
