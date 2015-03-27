@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System.Windows.Controls;
+using System.Windows.Input;
 using Jumpy.Entities;
 using ViewModel;
 using System.Collections.Generic;
@@ -12,12 +13,13 @@ namespace Jumpy.ViewModel
         private Player _player;
         private double _x;
         private double _y;
-        private bool isJumping;
+        private bool _isJumping;
         private double _gravity = 2;
         private double _velocity = 20;
 
         public double ViewWidth { get; set; }
         public double ViewHeight { get; set; }
+        public double ViewSize { get; set; }
         public double PhysicalZeroPointX { get; set; }
         public double PhysicalZeroPointY { get; set; }
 
@@ -47,7 +49,7 @@ namespace Jumpy.ViewModel
             set
             {
                 _x = value;
-                LogicX = Convert.ToInt16(Math.Round( (PhysicalX - PhysicalZeroPointX) /ViewWidth));
+                LogicX = Convert.ToInt16(Math.Round( (PhysicalX - PhysicalZeroPointX) / ViewSize));
                 RaisePropertyChanged("PhysicalX");
             }
         }
@@ -58,7 +60,7 @@ namespace Jumpy.ViewModel
             set
             {
                 _y = value;
-                LogicY = Convert.ToInt16(Math.Round( (PhysicalY - PhysicalZeroPointY) /ViewHeight));
+                LogicY = Convert.ToInt16(Math.Round( (PhysicalY - PhysicalZeroPointY) / ViewSize));
                 RaisePropertyChanged("PhysicalY");
             }
         }
@@ -100,8 +102,8 @@ namespace Jumpy.ViewModel
 
         private void JumpAction()
         {
-            isJumping = true;
-            while (isJumping)
+            _isJumping = true;
+            while (_isJumping)
             {
                 if (_y + _velocity > 0)
                 {
@@ -111,7 +113,7 @@ namespace Jumpy.ViewModel
                 else
                 {
                     PhysicalY = 0;
-                    isJumping = false;
+                    _isJumping = false;
                 }
             }
             
@@ -143,5 +145,6 @@ namespace Jumpy.ViewModel
         {
             get{return new RelayCommand(p=>MoveDownAction());}
         }
+
     }
 }
