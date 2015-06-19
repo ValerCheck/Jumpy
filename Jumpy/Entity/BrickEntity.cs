@@ -1,6 +1,4 @@
 ﻿using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 using Jumpy.Entities;
 
 namespace Jumpy.Entity
@@ -8,36 +6,32 @@ namespace Jumpy.Entity
     public class BrickEntity
     {
         private Brick _model;
-        private FrameworkElement _view;
+        private double _screenX;
+        private double _screenY;
 
         public BrickEntity(double elementSize, int logicX, int logicY)
         {
-            _view = new Border
-            {
-                Width = elementSize,
-                Height = elementSize,
-                Background = Brushes.Brown,
-                BorderBrush = Brushes.Brown,
-            };
             _model = new Brick(new ModelPoint {X = logicX, Y = logicY} );
+            _screenX = logicX*elementSize;
+            _screenY = logicY*elementSize;
         }
 
-        public BrickEntity(Brick model, FrameworkElement view)
+        public double ScreenX
         {
-            _model = model;
-            _view = view;
+            get { return _screenX; }
+            set { _screenX = value; }
+        }
+
+        public double ScreenY
+        {
+            get { return _screenY; }
+            set { _screenY = value; }
         }
 
         public Brick Model
         {
             get { return _model; }
             set { _model = value; }
-        }
-
-        public FrameworkElement View
-        {
-            get { return _view; }
-            set { _view = value; }
         }
     }
 }

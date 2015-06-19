@@ -68,7 +68,9 @@
     <Compile Include="Model\IActor.cs" />
     <Compile Include="Model\Level.cs" />
     <Compile Include="Model\Player.cs" />
+    <Compile Include="ViewModel\BrickViewModel.cs" />
     <Compile Include="ViewModel\GameViewModel.cs" />
+    <Compile Include="ViewModel\PlayerViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

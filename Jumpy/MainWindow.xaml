@@ -8,21 +8,47 @@
         WindowState="Maximized"
         Width="640"
         Loaded="OnLoaded"
+        PreviewKeyDown="HandlePreviewKeyDown"
         KeyDown="MainWindow_OnKeyDown"
         KeyUp="MainWindow_OnKeyUp">
     <Window.DataContext>
         <viewModel:GameViewModel/>
     </Window.DataContext>
-    <!--<Window.InputBindings>
+    <Window.InputBindings>
         <KeyBinding Key="Left" Command="{Binding MoveLeft}" ></KeyBinding>
         <KeyBinding Key="Right" Command="{Binding MoveRight}"></KeyBinding>
         <KeyBinding Key="Up" Command="{Binding MoveUp}"></KeyBinding>
         <KeyBinding Key="Down" Command="{Binding MoveDown}"></KeyBinding>
-    </Window.InputBindings>-->
+    </Window.InputBindings>
     <Grid Background="DarkBlue">
-        <Canvas Margin="50" Background="Black">
-            <TextBlock Width="50" Background="White" Text="{Binding LogicX}"></TextBlock>
-            <TextBlock Margin="60 0 0 0" Width="50" Background="White" Text="{Binding LogicY}"></TextBlock>
+        <TextBlock Width="50" Background="White" Text="{Binding LogicX}"></TextBlock>
+        <TextBlock Margin="60 0 0 0" Width="50" Background="White" Text="{Binding LogicY}"></TextBlock>
+        <ItemsControl Margin="50" Background="Black" ItemsSource="{Binding Actors}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Canvas IsItemsHost="True"></Canvas>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            
+            <ItemsControl.Resources>
+                <DataTemplate DataType="{x:Type viewModel:BrickViewModel}">
+                    <Border Width="32" Height="32" Background="Brown" BorderBrush="Brown">
+                    </Border>                
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type viewModel:PlayerViewModel}">
+                    <Ellipse Width="32" Height="32" Fill="Green"></Ellipse>
+                </DataTemplate>
+            </ItemsControl.Resources>
+            
+            <ItemsControl.ItemContainerStyle>
+                <Style>
+                    <Setter Property="Canvas.Left" Value="{Binding ScreenX}"></Setter>
+                    <Setter Property="Canvas.Top" Value="{Binding ScreenY}"></Setter>
+                </Style>
+            </ItemsControl.ItemContainerStyle>
+        </ItemsControl>
+        <!--<Canvas Margin="50" Background="Black" >-->
+            
             <!--<Ellipse Canvas.Bottom="{Binding Y}" Canvas.Left="{Binding X}" Width="70" Height="70" 
                  Fill="Chartreuse" Stroke="CornflowerBlue" StrokeThickness="5">
                 </Ellipse>-->
@@ -32,7 +58,7 @@
                 </Border>-->
             <!--<Rectangle Canvas.Bottom="0" Canvas.Left="0" Width="300" Height="40" Fill="Aqua"></Rectangle>
                 <Rectangle Canvas.Bottom="120" Canvas.Left="350" Width="300" Height="40" Fill="Aqua"></Rectangle>-->
-        </Canvas>
+        <!--</Canvas>-->
     </Grid>
     
 </Window>
