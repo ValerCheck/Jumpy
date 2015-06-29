@@ -1,27 +1,22 @@
-﻿namespace Jumpy.Entities
+﻿namespace Jumpy.Model
 {
-    public class Player : IActor
+    public class Player
     {
-        public ModelPoint LogicPosition { get; set; }
+        public ModelPoint Position { get; set; }
 
-        public int X
-        {
-            get { return LogicPosition.X; }
-            set { LogicPosition.X = value; }
-        }
+        public double X { get; set; }
 
-        public int Y
-        {
-            get { return LogicPosition.Y; } 
-            set { LogicPosition.Y = value; }
-        }
+        public double Y { get; set; }
+
+        public double Width { get; set; }
+        public double Height { get; set; }
 
         public bool IsSolid { get; private set; }
 
-        public Player(ModelPoint logicPosition)
+        public Player(ModelPoint position)
         {
             IsSolid = false;
-            LogicPosition = logicPosition;
+            Position = position;
         }
     }
 }

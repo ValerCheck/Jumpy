@@ -7,7 +7,22 @@ namespace Jumpy
 {
     public class ModelPoint
     {
-        public int X { get; set; }
-        public int Y { get; set; }
+        public double X { get; set; }
+        public double Y { get; set; }
+    }
+
+    public enum Directions
+    {
+        Left = 1,
+        Up = 2,
+        Right = 3,
+        Down = 4,
+        Default = 0
+    }
+
+    public enum EntityType
+    {
+        Space = 0,
+        Brick = 1,
     }
 }

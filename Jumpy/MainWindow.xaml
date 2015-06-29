@@ -6,11 +6,7 @@
         WindowStyle="ToolWindow" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
-        Width="640"
-        Loaded="OnLoaded"
-        PreviewKeyDown="HandlePreviewKeyDown"
-        KeyDown="MainWindow_OnKeyDown"
-        KeyUp="MainWindow_OnKeyUp">
+        Width="640">
     <Window.DataContext>
         <viewModel:GameViewModel/>
     </Window.DataContext>
@@ -21,8 +17,6 @@
         <KeyBinding Key="Down" Command="{Binding MoveDown}"></KeyBinding>
     </Window.InputBindings>
     <Grid Background="DarkBlue">
-        <TextBlock Width="50" Background="White" Text="{Binding LogicX}"></TextBlock>
-        <TextBlock Margin="60 0 0 0" Width="50" Background="White" Text="{Binding LogicY}"></TextBlock>
         <ItemsControl Margin="50" Background="Black" ItemsSource="{Binding Actors}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -42,8 +36,8 @@
             
             <ItemsControl.ItemContainerStyle>
                 <Style>
-                    <Setter Property="Canvas.Left" Value="{Binding ScreenX}"></Setter>
-                    <Setter Property="Canvas.Top" Value="{Binding ScreenY}"></Setter>
+                    <Setter Property="Canvas.Left" Value="{Binding X}"></Setter>
+                    <Setter Property="Canvas.Top" Value="{Binding Y}"></Setter>
                 </Style>
             </ItemsControl.ItemContainerStyle>
         </ItemsControl>

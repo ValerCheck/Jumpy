@@ -1,28 +1,26 @@
 ﻿using System.IO;
-using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using Jumpy.Entities;
-using Jumpy.Entity;
+using Jumpy.Model;
 using Newtonsoft.Json;
 using ViewModel;
-using System.Collections.Generic;
 using System;
 
 namespace Jumpy.ViewModel
 {
-    public enum Directions
-    {
-        Left = 1,
-        Up = 2,
-        Right = 3,
-        Down = 4,
-        Default = 0
-    }
-
     public class GameViewModel : ViewModelBase
     {
+        #region Constants
+
+        private const double VelocityHorizontal = 5;
+        private const double VelocityJump = 15;
+        private const double Gravity = 0.7;
+        private const double MaxFallSpeed = 15;
+
+        #endregion
+
         private CompositeCollection _actors = new CompositeCollection();
         
         private PlayerViewModel _player;
@@ -37,7 +35,7 @@ namespace Jumpy.ViewModel
         public double ViewSize { get; set; }
         public double PhysicalZeroPointX { get; set; }
         public double PhysicalZeroPointY { get; set; }
-        private int _direction;
+        private Directions _direction;
         private double _verticalSpeed;
         private double _horizontalSpeed;
         private Level _currentLevel;
@@ -56,8 +54,8 @@ namespace Jumpy.ViewModel
 
         private void GameLoop(object sender, EventArgs e)
         {
-            HandleKeyboard();
             MovePlayer();
+            HandleKeyboard();
         }
 
         private void HandleKeyboard()
@@ -77,13 +75,13 @@ namespace Jumpy.ViewModel
             {
                 for (var x = 0; x < _currentLevel.Width; x++)
                 {
-                    if (_currentLevel.Map[y, x] != (int)MainWindow.EntityType.Brick) continue;
+                    if (_currentLevel.Map[y, x] != (int)EntityType.Brick) continue;
                     var brickVm = new BrickViewModel(elementSize, x, y);
                     Actors.Add(brickVm);
                 }
             }
 
-            var playerVm = new PlayerViewModel(elementSize, _currentLevel.PlayerPosition[0],
+            var playerVm = new PlayerViewModel(elementSize,elementSize, _currentLevel.PlayerPosition[0],
                 _currentLevel.PlayerPosition[1]);
 
             Player = playerVm;
@@ -112,21 +110,24 @@ namespace Jumpy.ViewModel
 
         private void MovePlayer()
         {
-            if (_direction == (int)Directions.Left)
+            Player.PrevX += _horizontalSpeed;
+            Player.PrevY += _verticalSpeed;
+
+            if (_direction == Directions.Left)
             {
-                if (Player.ScreenX > 0 && !_isJumping) _horizontalSpeed = -1;
+                if (Player.PrevX > 0 && !_isJumping) _horizontalSpeed = -5;
                 if (_isJumping) _horizontalSpeed = -1;
             }
-            if (_direction == (int)Directions.Right)
+            if (_direction == Directions.Right)
             {
-                if (PhysicalX < _currentLevel.Width * 32 && !_isJumping) _horizontalSpeed = 3;
-                if (_isJumping) _horizontalSpeed = 10;
+                if (Player.PrevX < _currentLevel.Width * 32 && !_isJumping) _horizontalSpeed = 5;
+                if (_isJumping) _horizontalSpeed = 1;
             }
-            if (_direction == (int)Directions.Up)
+            if (_direction == Directions.Up)
             {
-                //if (CanJump()) Jump();
+                if (!_isJumping) Jump();
             }
-            if (_direction == (int)Directions.Default)
+            if (_direction == Directions.Default)
             {
                 if (!_isJumping)
                 {
@@ -136,124 +137,122 @@ namespace Jumpy.ViewModel
                 if (_isJumping && Math.Abs(_horizontalSpeed) > 0) _horizontalSpeed /= 1.1;
             }
 
-            //if (_isJumping) Fall();
+            if (_isJumping) Fall();
 
-            Player.ScreenX += _horizontalSpeed;
-            //PhysicalY += _verticalSpeed;
+            Player.X = Player.PrevX;
+            Player.Y = Player.PrevY; 
         }
 
-        public double PhysicalX
+        private void Jump()
         {
-            get { return _x; }
-            set
-            {
-                _x = value;
-                //LogicX = Convert.ToInt16(Math.Round( (PhysicalX - PhysicalZeroPointX) / ViewSize));
-                RaisePropertyChanged("PhysicalX");
-            }
+            if (_isJumping || !_verticalSpeed.Equals(0)) return;
+            _isJumping = true;
+            _verticalSpeed = -10;
         }
 
-        public double PhysicalY
+        private void Fall()
         {
-            get { return _y; }
-            set
-            {
-                _y = value;
-                //LogicY = Convert.ToInt16(Math.Round( (PhysicalY - PhysicalZeroPointY) / ViewSize));
-                RaisePropertyChanged("PhysicalY");
-            }
-        }
-
-        public int LogicX
-        {
-            get
-            {
-                return Player == null ? 0 : Player.Player.X;
-            }
-            set
-            {
-                Player.Player.X = value;
-                RaisePropertyChanged("LogicX");
-            }
-        }
-
-        public int LogicY
-        {
-            get { return Player == null ? 0 : Player.Player.Y; }
-            set
-            {
-                Player.Player.Y = value;
-                RaisePropertyChanged("LogicY");
-            }
-        }
-
-        private void MoveLeftAction()
-        {
-            //if (Player.Player.X > 0)
-              //  PhysicalX -= _velocity;
+            if (_verticalSpeed < MaxFallSpeed) _verticalSpeed += Gravity;
+            else if (_verticalSpeed > MaxFallSpeed) _verticalSpeed = MaxFallSpeed;
             
-            if (Keyboard.IsKeyDown(Key.Left))
+            foreach (var actor in _actors)
             {
-                _direction = Keyboard.IsKeyDown(Key.Right) ? (int)Directions.Default : (int)Directions.Left;
+                if (actor.GetType() != typeof(BrickViewModel)) continue;
+                if (CheckCollision(Player, (IGameElement)actor) && (_verticalSpeed > 0) && Player.PrevY < ((IGameElement) actor).Y)
+                {
+                    Player.PrevY = ((IGameElement) actor).Y - Player.Height;
+                    //Player.PrevY -= (Player.PrevY + Player.Height) - ((IGameElement) actor).Y;
+                    _isJumping = false;
+                    _verticalSpeed = 0;
+                }
             }
         }
-
-        private void MoveRightAction()
+        
+        private bool CheckBorders(int x, int y)
         {
-            //if (PhysicalX < 1000)
-            //    PhysicalX += _velocity;
-            if (Keyboard.IsKeyDown(Key.Right))
-            {
-                _direction = Keyboard.IsKeyDown(Key.Left) ? (int)Directions.Default : (int)Directions.Right;
-            }
-            //_direction = (int) Directions.Default;
+            var leftBorder = (x < 0);
+            var rightBorder = (x >= _currentLevel.Width);
+            var topBorder = (y < 0);
+            var bottomBorder = (y >= _currentLevel.Height);
+            return ((leftBorder || rightBorder) || (topBorder || bottomBorder));
+        }
+
+        private bool CheckCollision(IGameElement obj1, IGameElement obj2)
+        {
+            return CheckVerticalCollision(obj1, obj2) && CheckHorizontalCollision(obj1, obj2);
+
+        }
+
+        private bool CheckVerticalCollision(IGameElement obj1, IGameElement obj2)
+        {
+            return obj1.PrevY < obj2.PrevY + obj2.Height && obj1.PrevY + obj1.Height > obj2.PrevY;
+        }
+
+        private bool CheckHorizontalCollision(IGameElement obj1, IGameElement obj2)
+        {
+            return obj1.PrevX < obj2.PrevX + obj2.Width && obj1.PrevX + obj1.Width > obj2.PrevX;
+        }
+
+        private bool IsSpaceUnder()
+        {
+            //var underActors = GetActorsUnderPlayer();
+            //return underActors[1] == (int)EntityType.Space;
+            return true;
+        }
+
+        private bool IsSolidObjectUnder()
+        {
+            //var underActors = GetActorsUnderPlayer();
+            //return underActors[1] == (int)EntityType.Brick;
+            return false;
+        }
+
+        #region Commands Actions
+
+        private void ChangeDirectionLeftAction()
+        {
+            _direction = Keyboard.IsKeyDown(Key.Left) ? Directions.Left : Directions.Default;
+        }
+
+        private void ChangeDirectionRightAction()
+        {
+            _direction = Keyboard.IsKeyDown(Key.Right) ? Directions.Right : Directions.Default;
         }
 
         private void JumpAction()
         {
-            //_isJumping = true;
-            //while (_isJumping)
-            //{
-            //    if (_y + _velocity > 0)
-            //    {
-            //        PhysicalY += _velocity;
-            //        _velocity -= _gravity;
-            //    }
-            //    else
-            //    {
-            //        PhysicalY = 0;
-            //        _isJumping = false;
-            //    }
-            //}
-            
-            //_velocity = 20;
+            if (!_isJumping) _direction = Directions.Up;
         }
 
-        private void MoveDownAction()
+        private void ChangeDirectionDownAction()
         {
-            if (PhysicalY > 0)
-                PhysicalY -= _velocity;
+            if (Player.Y > 0) Player.Y -= (_velocity + 50);
         }
+
+        #endregion
+
+        #region Commands
 
         public ICommand MoveLeft
         {
-            get{return new RelayCommand(p=>MoveLeftAction());}
+            get { return new RelayCommand(p => ChangeDirectionLeftAction()); }
         }
 
         public ICommand MoveRight
         {
-            get{return new RelayCommand(p=>MoveRightAction());}
+            get { return new RelayCommand(p => ChangeDirectionRightAction()); }
         }
 
         public ICommand MoveUp
         {
-            get{return new RelayCommand(p=>JumpAction());}
+            get { return new RelayCommand(p => JumpAction()); }
         }
 
         public ICommand MoveDown
         {
-            get{return new RelayCommand(p=>MoveDownAction());}
+            get { return new RelayCommand(p => ChangeDirectionDownAction()); }
         }
 
+        #endregion
     }
 }
